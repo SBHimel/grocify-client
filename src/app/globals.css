@@ -1,2 +1,99 @@
 @import "tailwindcss";
-@import "@heroui/styles"; 
+@import "@heroui/styles";
+
+:root {
+  /* Grocify Primary Palette */
+  --brand-forest-950: #052e16;
+  --brand-forest-900: #14532d;
+  --brand-forest-800: #166534;
+  --brand-forest-700: #15803d;
+  --brand-forest-600: #16a34a;
+  --brand-forest-500: #22c55e;
+  --brand-forest-100: #dcfce7;
+  --brand-forest-50: #f0fdf4;
+
+  /* Grocify Warm Cream & Neutral Surface Palette */
+  --brand-cream-50: #fdfbf7;
+  --brand-cream-100: #f9f6ee;
+  --brand-cream-200: #f2ece0;
+  --brand-cream-300: #e5dbc7;
+
+  /* Accent Earthy Honey & Amber */
+  --brand-amber-500: #f59e0b;
+  --brand-amber-600: #d97706;
+  --brand-amber-100: #fef3c7;
+  --brand-amber-50: #fffbeb;
+
+  /* Typography Colors */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+
+  /* Elevation Shadows */
+  --shadow-organic: 0 4px 20px -2px rgba(20, 83, 45, 0.08);
+  --shadow-card-hover: 0 12px 28px -4px rgba(20, 83, 45, 0.12);
+}
+
+body {
+  background-color: var(--brand-cream-50);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth Image Zooms */
+.img-zoom-hover {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.img-zoom-hover:hover {
+  transform: scale(1.05);
+}
+
+/* Badge Glows & Subtle Gradients */
+.bg-gradient-forest {
+  background: linear-gradient(135deg, #14532d 0%, #166534 50%, #052e16 100%);
+}
+
+.bg-gradient-hero {
+  background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.15), transparent 50%),
+              radial-gradient(circle at bottom left, rgba(245, 158, 11, 0.1), transparent 50%),
+              #fdfbf7;
+}
+
+.bg-gradient-organic {
+  background: linear-gradient(180deg, #fdfbf7 0%, #f4fbf6 100%);
+}
+
+.bg-gradient-card {
+  background: linear-gradient(145deg, #ffffff, #fdfbf7);
+}
+
+/* Animation utilities */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(0.98); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s infinite ease-in-out;
+}
