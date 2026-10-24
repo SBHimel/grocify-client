@@ -4,7 +4,6 @@ import React from "react";
 import Image from "next/image";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { GroceryCategory } from "@/types";
-import { MOCK_CATEGORIES } from "@/data/mockGrocery";
 
 interface CategorySectionProps {
   categories?: GroceryCategory[];
@@ -13,11 +12,11 @@ interface CategorySectionProps {
 }
 
 export const CategorySection: React.FC<CategorySectionProps> = ({
-  categories,
+  categories = [],
   onSelectCategory,
   selectedCategory,
 }) => {
-  const displayCategories = categories && categories.length > 0 ? categories : MOCK_CATEGORIES;
+  const displayCategories = categories;
   return (
     <section id="categories" className="py-14 bg-[#f9f6ee] border-y border-[#e5dbc7]/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -37,7 +36,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
           </div>
 
           <a
-            href="#products"
+            href="products"
             className="inline-flex items-center gap-2 text-sm font-bold text-[#14532D] hover:text-[#166534] group"
           >
             <span>View all products</span>
@@ -67,13 +66,22 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
               >
                 {/* Category Thumbnail */}
                 <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 mb-3">
-                  <Image
-                    src={category.image || ""}
-                    alt={category.name}
-                    fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    className="object-cover group-hover:scale-108 transition-transform duration-500"
-                  />
+                  {category.image?.trim() ? (
+                    <Image
+                      src={category.image.trim()}
+                      alt={category.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover group-hover:scale-108 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center"
+                      style={{ background: category.color || "#f0fdf4" }}
+                    >
+                      <span className="text-3xl select-none" aria-hidden="true">🛒</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
                   <span className="absolute bottom-2 left-2 text-[11px] font-bold text-white bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full">
                     {category.itemCount}+ Items
@@ -94,6 +102,14 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
             );
           })}
         </div>
+
+        {displayCategories.length === 0 && (
+          <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-[#e5dbc7] p-6">
+            <p className="text-gray-500 text-sm font-medium">
+              No farm categories available at this time.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

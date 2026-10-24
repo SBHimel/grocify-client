@@ -10,7 +10,7 @@ import ProductTable from "./ProductTable";
 import AddProductModal from "@/components/dashboard/seller/AddProductModal";
 
 export const metadata: Metadata = {
-  title: "Product Catalog Management | Grocify Back-Office",
+  title: "Product Catalog Management",
   description: "Browse, create, update, and manage Grocify fresh grocery products.",
 };
 

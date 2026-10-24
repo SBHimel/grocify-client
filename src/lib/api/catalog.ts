@@ -1,5 +1,4 @@
 import { GroceryCategory, GroceryProduct } from "@/types";
-import { MOCK_CATEGORIES, MOCK_PRODUCTS } from "@/data/mockGrocery";
 
 const SERVER_URL =
   process.env.SERVER_URL ||
@@ -17,12 +16,33 @@ export interface GetProductsParams {
   limit?: number;
 }
 
+export interface PaginationMetadata {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface ProductsWithPagination {
+  products: GroceryProduct[];
+  pagination: PaginationMetadata;
+}
+
 /**
- * Fetch products from the real Grocify Express API with graceful fallback.
+ * Fetch products with server-side pagination metadata (total, page, limit, totalPages).
  */
-export const fetchProducts = async (
+export const fetchProductsWithPagination = async (
   params?: GetProductsParams
-): Promise<GroceryProduct[]> => {
+): Promise<ProductsWithPagination> => {
+  const defaultLimit = params?.limit || 12;
+  const defaultPage = params?.page || 1;
+  const defaultPagination: PaginationMetadata = {
+    total: 0,
+    page: defaultPage,
+    limit: defaultLimit,
+    totalPages: 1,
+  };
+
   try {
     const url = new URL("/api/v1/products", SERVER_URL);
 
@@ -44,40 +64,41 @@ export const fetchProducts = async (
     }
 
     const json = await res.json();
-    if (json.success && Array.isArray(json.data)) {
-      return json.data;
-    }
+    const products: GroceryProduct[] =
+      json.success && Array.isArray(json.data)
+        ? json.data
+        : Array.isArray(json)
+        ? json
+        : [];
 
-    if (Array.isArray(json)) {
-      return json;
-    }
+    const pagination: PaginationMetadata = json.pagination || json.meta || {
+      total: products.length,
+      page: defaultPage,
+      limit: defaultLimit,
+      totalPages: Math.ceil((products.length || 1) / defaultLimit) || 1,
+    };
 
-    return MOCK_PRODUCTS;
+    return { products, pagination };
   } catch (error) {
-    // Graceful offline/loading fallback using typed mock data
-    console.warn("Express products API unreachable or errored, using mock fallback:", error);
-    let filtered = [...MOCK_PRODUCTS];
-
-    if (params?.category) {
-      filtered = filtered.filter(
-        (p) => p.categoryId === params.category || p.slug === params.category
-      );
-    }
-    if (params?.search) {
-      const q = params.search.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.categoryName?.toLowerCase().includes(q)
-      );
-    }
-    return filtered;
+    console.error("Express products pagination API error:", error);
+    return { products: [], pagination: defaultPagination };
   }
 };
 
 /**
- * Fetch a single product by ID or slug.
+ * Fetch products from the real Grocify Express API with live MongoDB data.
+ * Does not fall back to mock data so newly added products are never masked.
+ */
+export const fetchProducts = async (
+  params?: GetProductsParams
+): Promise<GroceryProduct[]> => {
+  const result = await fetchProductsWithPagination(params);
+  return result.products;
+};
+
+/**
+ * Fetch a single product by ID or slug from live MongoDB.
+ * Returns null if not found (allowing proper 404/not found display).
  */
 export const fetchProductById = async (
   id: string
@@ -96,21 +117,19 @@ export const fetchProductById = async (
         const legacyJson = await legacyRes.json();
         return legacyJson.data || legacyJson;
       }
-      throw new Error(`Product not found via API (${res.status})`);
+      return null;
     }
 
     const json = await res.json();
-    return json.data || json;
-  } catch {
-    // Graceful fallback to mock data
-    return (
-      MOCK_PRODUCTS.find((p) => p.id === id || p.slug === id) || null
-    );
+    return json.data || json || null;
+  } catch (error) {
+    console.error(`Error fetching product [${id}]:`, error);
+    return null;
   }
 };
 
 /**
- * Fetch categories from the real Grocify Express API with graceful fallback.
+ * Fetch categories from the real Grocify Express API with live counts.
  */
 export const fetchCategories = async (): Promise<GroceryCategory[]> => {
   try {
@@ -127,9 +146,9 @@ export const fetchCategories = async (): Promise<GroceryCategory[]> => {
       return json.data;
     }
 
-    return MOCK_CATEGORIES;
+    return [];
   } catch (error) {
-    console.warn("Express categories API unreachable, using mock fallback:", error);
-    return MOCK_CATEGORIES;
+    console.error("Express categories API error:", error);
+    return [];
   }
 };

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Loader2, Upload, AlertCircle, X, Image as ImageIcon } from "lucide-react";
+import { PlusCircle, Loader2, Upload, AlertCircle, X, Image as ImageIcon, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { uploadToImgBB } from "@/lib/imgUpload";
 
@@ -45,28 +45,49 @@ export default function AddProductModal({ categories = DEFAULT_CATEGORIES }: Add
   const [minStockAlert, setMinStockAlert] = useState("5");
   const [isOrganic, setIsOrganic] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
+  const [isSeasonal, setIsSeasonal] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [urlInput, setUrlInput] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setIsUploading(true);
-    const toastId = toast.loading("Uploading product image to ImgBB...");
+    const toastId = toast.loading(`Uploading ${files.length} image(s) to ImgBB...`);
 
+    const uploadedUrls: string[] = [];
     try {
-      const result = await uploadToImgBB(file);
-      setImageUrl(result.url);
-      toast.success("Image uploaded successfully!", { id: toastId });
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const result = await uploadToImgBB(file);
+        uploadedUrls.push(result.url);
+      }
+      setImages((prev) => [...prev, ...uploadedUrls]);
+      toast.success(`${uploadedUrls.length} image(s) uploaded successfully!`, { id: toastId });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to upload image.";
       toast.error(msg, { id: toastId });
     } finally {
       setIsUploading(false);
-      // Reset input
       e.target.value = "";
     }
+  };
+
+  const handleAddUrl = () => {
+    if (!urlInput.trim()) return;
+    try {
+      new URL(urlInput.trim());
+      setImages((prev) => [...prev, urlInput.trim()]);
+      setUrlInput("");
+    } catch {
+      toast.error("Please enter a valid HTTP/HTTPS image URL.");
+    }
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const validateForm = () => {
@@ -120,7 +141,8 @@ export default function AddProductModal({ categories = DEFAULT_CATEGORIES }: Add
         minStockAlert: parseInt(minStockAlert, 10) || 5,
         isOrganic,
         isFeatured,
-        images: imageUrl ? [imageUrl] : ["/assets/grocify_logo.png"],
+        isSeasonal,
+        images: images.length > 0 ? images : ["/assets/grocify_logo.png"],
       };
 
       const res = await fetch("/api/products", {
@@ -142,7 +164,8 @@ export default function AddProductModal({ categories = DEFAULT_CATEGORIES }: Add
       setDescription("");
       setRetailPrice("");
       setOriginalPrice("");
-      setImageUrl("");
+      setImages([]);
+      setUrlInput("");
       setFieldErrors({});
 
       setIsOpen(false);
@@ -178,13 +201,13 @@ export default function AddProductModal({ categories = DEFAULT_CATEGORIES }: Add
               <div>
                 <h3 className="text-xl font-black text-gray-950">Add Grocery Product</h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Save a new product to MongoDB with ImgBB-hosted imagery.
+                  Save a new product to MongoDB with multi-image gallery support.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -240,7 +263,7 @@ export default function AddProductModal({ categories = DEFAULT_CATEGORIES }: Add
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Retail Price ($) <span className="text-red-500">*</span>
+                    Retail Price (৳) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -267,119 +290,214 @@ export default function AddProductModal({ categories = DEFAULT_CATEGORIES }: Add
                 </div>
               </div>
 
-              {/* Description */}
+              {/* Original Compare Price */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Description
+                  Original / Compare-At Price (৳){" "}
+                  <span className="text-gray-400 font-normal">(optional, for discount badge)</span>
                 </label>
-                <textarea
-                  rows={2}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Organic, pesticide-free, delivered chilled within 24h..."
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs border border-gray-200 bg-gray-50/50 focus:border-[#14532D] focus:bg-white outline-none resize-none"
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={originalPrice}
+                  onChange={(e) => setOriginalPrice(e.target.value)}
+                  placeholder="5.99"
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs border border-gray-200 bg-gray-50/50 focus:border-[#14532D] focus:bg-white outline-none"
                 />
               </div>
 
-              {/* Unit conversions & Stock */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                    Base Unit
-                  </label>
-                  <input
-                    type="text"
-                    value={baseUnit}
-                    onChange={(e) => setBaseUnit(e.target.value)}
-                    placeholder="piece, kg, g"
-                    className="w-full px-3 py-2 rounded-xl text-xs border border-gray-200 bg-gray-50/50 outline-none"
-                  />
+              {/* Unit Conversion Fields */}
+              <div className="p-3.5 rounded-2xl bg-[#fdfbf7] border border-[#e5dbc7]/70 space-y-3">
+                <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                  Unit Conversion Settings
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-1">
+                      Base Unit <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={baseUnit}
+                      onChange={(e) => setBaseUnit(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl text-xs border border-gray-200 bg-white"
+                    >
+                      <option value="piece">Piece</option>
+                      <option value="kg">kg</option>
+                      <option value="g">g</option>
+                      <option value="packet">Packet</option>
+                      <option value="box">Box</option>
+                      <option value="carton">Carton</option>
+                      <option value="litre">Litre</option>
+                      <option value="ml">ml</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-1">Sell Unit</label>
+                    <select
+                      value={sellUnit}
+                      onChange={(e) => setSellUnit(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl text-xs border border-gray-200 bg-white"
+                    >
+                      <option value="piece">Piece</option>
+                      <option value="kg">kg</option>
+                      <option value="g">g</option>
+                      <option value="packet">Packet</option>
+                      <option value="box">Box</option>
+                      <option value="carton">Carton</option>
+                      <option value="litre">Litre</option>
+                      <option value="ml">ml</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-600 mb-1">
+                      Multiplier
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0.001"
+                      value={multiplier}
+                      onChange={(e) => setMultiplier(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl text-xs border border-gray-200 bg-white"
+                    />
+                  </div>
                 </div>
+              </div>
+
+              {/* Stock Settings */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                    Sell Unit
-                  </label>
-                  <input
-                    type="text"
-                    value={sellUnit}
-                    onChange={(e) => setSellUnit(e.target.value)}
-                    placeholder="pack, box"
-                    className="w-full px-3 py-2 rounded-xl text-xs border border-gray-200 bg-gray-50/50 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                    Initial Stock
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Current Stock
                   </label>
                   <input
                     type="number"
                     min="0"
                     value={currentStock}
                     onChange={(e) => setCurrentStock(e.target.value)}
-                    placeholder="10"
-                    className="w-full px-3 py-2 rounded-xl text-xs border border-gray-200 bg-gray-50/50 outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs border border-gray-200 bg-gray-50/50 focus:border-[#14532D] focus:bg-white outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Min Stock Alert Ceiling
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={minStockAlert}
+                    onChange={(e) => setMinStockAlert(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs border border-gray-200 bg-gray-50/50 focus:border-[#14532D] focus:bg-white outline-none"
                   />
                 </div>
               </div>
 
-              {/* Image Upload with ImgBB */}
-              <div className="p-4 rounded-2xl border border-dashed border-gray-200 bg-gray-50/50">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5 text-[#14532D]" />
-                    Product Image (Hosted on ImgBB)
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Description & Tasting Notes
+                </label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Fresh morning-harvest produce notes..."
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs border border-gray-200 bg-gray-50/50 focus:border-[#14532D] focus:bg-white outline-none"
+                />
+              </div>
+
+              {/* Multi-Image Gallery Manager */}
+              <div className="p-3.5 rounded-2xl bg-[#fdfbf7] border border-[#e5dbc7]/70 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-gray-800">
+                    Product Gallery Images ({images.length})
                   </label>
                   {isUploading && (
                     <span className="text-[11px] text-emerald-800 font-bold flex items-center gap-1">
-                      <Loader2 className="w-3 h-3 animate-spin" /> Uploading...
+                      <Loader2 className="w-3 h-3 animate-spin" /> Uploading to ImgBB...
                     </span>
                   )}
                 </div>
 
-                {imageUrl ? (
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={imageUrl}
-                      alt="Preview"
-                      className="w-12 h-12 rounded-xl object-cover border border-[#e5dbc7]"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-bold text-gray-800 truncate">{imageUrl}</p>
-                      <button
-                        type="button"
-                        onClick={() => setImageUrl("")}
-                        className="text-[11px] text-red-600 hover:underline font-semibold"
-                      >
-                        Remove image
-                      </button>
-                    </div>
+                {/* Added Images Thumbnail Strip */}
+                {images.length > 0 && (
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5">
+                    {images.map((img, idx) =>
+                      img && img.trim() !== "" ? (
+                        <div
+                          key={idx}
+                          className="relative group aspect-square rounded-xl overflow-hidden border border-[#e5dbc7] bg-white shadow-2xs"
+                        >
+                          <img
+                            src={img}
+                            alt={`Product view ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          {idx === 0 && (
+                            <span className="absolute top-1 left-1 bg-[#14532D] text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                              Cover
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 cursor-pointer"
+                            title="Remove image"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : null
+                    )}
                   </div>
-                ) : (
-                  <div>
+                )}
+
+                {/* Upload or Add URL Controls */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleImageFileChange}
+                      multiple
+                      onChange={handleImageFilesChange}
                       disabled={isUploading}
-                      id="product-image-file"
+                      id="product-images-files"
                       className="hidden"
                     />
                     <label
-                      htmlFor="product-image-file"
-                      className="flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-xl bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+                      htmlFor="product-images-files"
+                      className="flex-1 flex items-center justify-center gap-2 py-2 px-3 border border-gray-300 rounded-xl bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
                     >
-                      <Upload className="w-4 h-4 text-gray-500" />
-                      Select Image to Upload
+                      <Upload className="w-3.5 h-3.5 text-gray-500" />
+                      <span>Upload Files to ImgBB</span>
                     </label>
-                    <p className="text-[10px] text-gray-400 text-center mt-1.5">
-                      JPG, PNG, WEBP up to 10MB. Uploads directly using your ImgBB key.
-                    </p>
                   </div>
-                )}
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      placeholder="Or paste external image URL..."
+                      className="flex-1 px-3 py-1.5 rounded-xl text-xs border border-gray-200 bg-white outline-none focus:border-[#14532D]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddUrl}
+                      className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-700 cursor-pointer"
+                    >
+                      Add URL
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Checkboxes */}
-              <div className="flex items-center gap-6 pt-1">
+              <div className="flex flex-wrap items-center gap-6 pt-1">
                 <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
                   <input
                     type="checkbox"
@@ -398,6 +516,15 @@ export default function AddProductModal({ categories = DEFAULT_CATEGORIES }: Add
                   />
                   <span>Featured Product</span>
                 </label>
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isSeasonal}
+                    onChange={(e) => setIsSeasonal(e.target.checked)}
+                    className="rounded text-[#14532D] focus:ring-[#14532D]"
+                  />
+                  <span>Fresh Harvest Seasonal</span>
+                </label>
               </div>
 
               {/* Modal Footer */}
@@ -406,14 +533,14 @@ export default function AddProductModal({ categories = DEFAULT_CATEGORIES }: Add
                   type="button"
                   onClick={() => setIsOpen(false)}
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || isUploading}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   style={{ background: "#14532D" }}
                 >
                   {isSubmitting ? (

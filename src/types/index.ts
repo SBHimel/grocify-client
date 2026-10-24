@@ -118,5 +118,7 @@ export interface CustomerOrder {
   totalAmount: number;
   paymentMethod: PaymentMethod;
   status: OrderStatus;
+  notes?: string;
   createdAt: string;
+  updatedAt?: string;
 }

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Plus, Minus, ShoppingBag, Check } from "lucide-react";
 import { GroceryProduct } from "@/types";
 import { useCart } from "@/context/CartContext";
+import { formatBDT } from "@/lib/currency";
 
 export const ProductDetailCartActions: React.FC<{ product: GroceryProduct }> = ({
   product,
@@ -59,7 +60,7 @@ export const ProductDetailCartActions: React.FC<{ product: GroceryProduct }> = (
           ) : (
             <>
               <ShoppingBag className="w-4 h-4 text-emerald-300" />
-              <span>Add to Basket (${(product.retailPrice * selectedQty).toFixed(2)})</span>
+              <span>Add to Basket ({formatBDT(product.retailPrice * selectedQty)})</span>
             </>
           )}
         </button>

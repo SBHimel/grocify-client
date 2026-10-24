@@ -33,7 +33,7 @@ export const SeasonalBanner: React.FC = () => {
               </h2>
 
               <p className="text-sm sm:text-base text-emerald-100 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                Enjoy peak-season strawberries, crisp orchard apples, creamy avocados, and stone-ground sourdough. Use code at checkout for orders over $30.
+                Enjoy peak-season strawberries, crisp orchard apples, creamy avocados, and stone-ground sourdough. Use code at checkout for orders over ৳30.
               </p>
 
               {/* Promo code badge & CTA */}

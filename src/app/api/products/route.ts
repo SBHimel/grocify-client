@@ -8,6 +8,27 @@ const SERVER_URL =
   "http://localhost:5000";
 
 /**
+ * Client-facing GET proxy for listing and searching products.
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const searchParams = req.nextUrl.search;
+    const response = await fetch(`${SERVER_URL}/api/v1/products${searchParams}`, {
+      cache: "no-store",
+    });
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error("Error fetching products via proxy:", error);
+    return NextResponse.json(
+      { success: false, data: [], message: "Failed to communicate with catalog service." },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * Client-facing POST proxy for creating products with Better Auth JWT.
  */
 export async function POST(req: NextRequest) {

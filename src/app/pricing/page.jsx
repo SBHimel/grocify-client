@@ -1,10 +1,22 @@
 import { Button } from "@heroui/react";
 
+export const metadata = {
+  title: "Seller Plans & Pricing",
+  description:
+    "Partner with Grocify to sell organic produce and reach thousands of fresh grocery customers with local delivery.",
+  openGraph: {
+    title: "Seller Plans & Pricing | Grocify",
+    description:
+      "Partner with Grocify to sell organic produce and reach thousands of fresh grocery customers with local delivery.",
+    url: "/pricing",
+  },
+};
+
 export default function SellerPricingPage() {
   const plans = [
     {
       name: "Starter Seller",
-      price: "$4",
+      price: "৳4",
       period: "/month",
       description: "Perfect for new sellers starting their journey.",
       features: [
@@ -18,7 +30,7 @@ export default function SellerPricingPage() {
     },
     {
       name: "Professional Seller",
-      price: "$14",
+      price: "৳14",
       period: "/month",
       description: "For growing businesses that need more visibility.",
       features: [

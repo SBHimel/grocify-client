@@ -12,6 +12,7 @@ import {
   BatchData,
   StockMovementData,
 } from "@/lib/api/inventory";
+import { formatBDT } from "@/lib/currency";
 import { AddBatchModal } from "@/components/dashboard/AddBatchModal";
 import {
   Layers,
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Inventory & Batch Management | Grocify Back-Office",
+  title: "Inventory & Batches",
   description: "Monitor grocery inventory batches, FEFO allocation, expiry alerts, and stock movements.",
 };
 
@@ -103,10 +104,11 @@ export default async function InventoryPage() {
   }
 
   const role = (session.user.role || "customer").toLowerCase();
-  if (role !== "owner" && role !== "manager" && role !== "seller" && role !== "admin") {
+  if (role !== "owner" && role !== "manager" && role !== "seller" && role !== "admin" && role !== "worker") {
     redirect("/");
   }
 
+  const isStaff = role === "worker";
   const token = await getAuthToken();
 
   let batches: BatchData[] = [];
@@ -154,9 +156,11 @@ export default async function InventoryPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <AddBatchModal products={products} />
-        </div>
+        {!isStaff && (
+          <div className="flex items-center gap-3">
+            <AddBatchModal products={products} />
+          </div>
+        )}
       </div>
 
       {errorState && (
@@ -274,7 +278,7 @@ export default async function InventoryPage() {
                       <span className="text-gray-400"> / {batch.initialQuantity} {batch.unit}</span>
                     </td>
                     <td className="py-3 px-4 font-medium text-gray-900">
-                      ${batch.unitCost.toFixed(2)}
+                      {formatBDT(batch.unitCost)}
                     </td>
                     <td className="py-3 px-4">
                       {batch.expiryDate ? (

@@ -9,21 +9,73 @@ import { AnnouncementBar } from "@/components/storefront/AnnouncementBar";
 import { Header } from "@/components/storefront/Header";
 import { Footer } from "@/components/storefront/Footer";
 import { CartDrawer } from "@/components/storefront/CartDrawer";
+import { AiChatbotWidget } from "@/components/storefront/AiChatbotWidget";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   subsets: ["latin"],
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.BETTER_AUTH_URL ||
+  "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "Grocify | Farm-Fresh Organic Groceries Delivered in 30 Mins",
+    default: "Grocify — Farm-Fresh Organic Groceries Delivered in 30 Mins",
     template: "%s | Grocify",
   },
   description:
     "Shop certified organic farm produce, fresh fruits, vegetables, dairy, and artisanal groceries delivered to your door in 30 minutes with Cash on Delivery (COD).",
+  applicationName: "Grocify",
+  authors: [{ name: "Grocify" }],
+  keywords: [
+    "grocery delivery",
+    "organic produce",
+    "farm fresh vegetables",
+    "fresh fruits",
+    "cash on delivery grocery",
+    "fast grocery delivery",
+    "Grocify",
+  ],
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/assets/grocify_logo.png", type: "image/png" },
+    ],
+    shortcut: "/assets/grocify_logo.png",
+    apple: [
+      { url: "/assets/grocify_logo.png", type: "image/png" },
+    ],
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_BD",
+    url: "/",
+    siteName: "Grocify",
+    title: "Grocify — Farm-Fresh Organic Groceries Delivered in 30 Mins",
+    description:
+      "Shop certified organic farm produce, fresh fruits, vegetables, dairy, and artisanal groceries delivered to your door in 30 minutes with Cash on Delivery (COD).",
+    images: [
+      {
+        url: "/assets/grocify_logo.png",
+        width: 800,
+        height: 800,
+        alt: "Grocify — Farm-to-Door Grocery Platform",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Grocify — Farm-Fresh Organic Groceries Delivered in 30 Mins",
+    description:
+      "Shop certified organic farm produce, fresh fruits, vegetables, dairy, and artisanal groceries delivered to your door in 30 minutes with Cash on Delivery (COD).",
+    images: ["/assets/grocify_logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -41,6 +93,7 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer />
           <CartDrawer />
+          <AiChatbotWidget />
           <Toaster
             position="top-right"
             toastOptions={{

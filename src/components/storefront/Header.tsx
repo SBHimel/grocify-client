@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Search,
   ShoppingCart,
@@ -15,10 +15,12 @@ import {
   ChevronDown,
   Sparkles,
   Leaf,
+  Loader2,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useCart } from "@/context/CartContext";
-import { MOCK_PRODUCTS } from "@/data/mockGrocery";
+import { GroceryProduct } from "@/types";
+import { formatBDT } from "@/lib/currency";
 
 interface AuthUser {
   id?: string;
@@ -30,6 +32,7 @@ interface AuthUser {
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { totalCount, subtotal, openCart } = useCart();
   const { data: session } = authClient.useSession();
   const user = session?.user as AuthUser | undefined;
@@ -38,6 +41,8 @@ export const Header: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState<GroceryProduct[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -62,13 +67,47 @@ export const Header: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter search results
-  const searchResults = searchQuery.trim()
-    ? MOCK_PRODUCTS.filter((p) =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.categoryName?.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5)
-    : [];
+  // Live search debounced query against real database catalog
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(`/api/products?search=${encodeURIComponent(trimmed)}&limit=6`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            setSearchResults(json.data);
+          } else {
+            setSearchResults([]);
+          }
+        } else {
+          setSearchResults([]);
+        }
+      } catch (err) {
+        console.error("Failed to query live search products:", err);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+    setIsSearchFocused(false);
+    router.push(`/products?search=${encodeURIComponent(query)}`);
+  };
 
   const handleSignOut = async () => {
     setIsUserMenuOpen(false);
@@ -123,7 +162,7 @@ export const Header: React.FC = () => {
             ref={searchContainerRef}
             className="hidden md:flex flex-1 max-w-lg relative"
           >
-            <div className="relative w-full">
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
               <input
                 type="text"
                 value={searchQuery}
@@ -132,64 +171,88 @@ export const Header: React.FC = () => {
                 placeholder="Search fresh fruits, veggies, dairy, organic honey..."
                 className="w-full bg-[#f4f0e6] hover:bg-[#eee8dc] focus:bg-white text-gray-900 placeholder-gray-500 text-sm rounded-full pl-11 pr-10 py-2.5 border border-[#dfd5c2] focus:border-[#14532D] focus:ring-2 focus:ring-[#14532D]/20 outline-none transition-all shadow-inner"
               />
-              <Search className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {isSearching ? (
+                <Loader2 className="w-4 h-4 text-emerald-700 animate-spin absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              ) : (
+                <Search className="w-4 h-4 text-gray-500 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              )}
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
-            </div>
+            </form>
 
             {/* Autocomplete Suggestion Dropdown */}
             {isSearchFocused && searchQuery.trim() && (
               <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
                 <div className="p-2 border-b border-gray-100 bg-gray-50/70 text-xs font-semibold text-gray-500 flex items-center justify-between">
-                  <span>Matching Grocery Items</span>
+                  <span>{isSearching ? "Searching catalog..." : "Matching Grocery Items"}</span>
                   <span>{searchResults.length} found</span>
                 </div>
                 {searchResults.length === 0 ? (
                   <div className="p-4 text-center text-sm text-gray-500">
-                    No grocery items found for &ldquo;{searchQuery}&rdquo;
+                    {isSearching
+                      ? "Searching fresh produce..."
+                      : `No grocery items found for "${searchQuery}"`}
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
-                    {searchResults.map((product) => (
-                      <Link
-                        key={product.id}
-                        href={`/#products`}
-                        onClick={() => {
-                          setIsSearchFocused(false);
-                          setSearchQuery("");
-                        }}
-                        className="flex items-center gap-3 p-3 hover:bg-emerald-50/60 transition-colors"
-                      >
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                          <Image
-                            src={product.images[0]}
-                            alt={product.name}
-                            fill
-                            sizes="48px"
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 truncate">
-                            {product.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {product.categoryName} • ${product.retailPrice.toFixed(2)}
-                          </p>
-                        </div>
-                        <span className="text-xs font-bold text-[#14532D] bg-emerald-100 px-2 py-0.5 rounded-full">
-                          In Stock
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
+                  <>
+                    <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
+                      {searchResults.map((product) => (
+                        <Link
+                          key={product.id}
+                          href={`/products/${product.id}`}
+                          onClick={() => {
+                            setIsSearchFocused(false);
+                            setSearchQuery("");
+                          }}
+                          className="flex items-center gap-3 p-3 hover:bg-emerald-50/60 transition-colors"
+                        >
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                            {product.images?.[0]?.trim() ? (
+                              <Image
+                                src={product.images[0].trim()}
+                                alt={product.name}
+                                fill
+                                sizes="48px"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-emerald-50">
+                                <span className="text-lg" aria-hidden="true">🥦</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">
+                              {product.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {product.categoryName} • {formatBDT(product.retailPrice)}
+                            </p>
+                          </div>
+                          <span className="text-xs font-bold text-[#14532D] bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">
+                            In Stock
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                    <Link
+                      href={`/products?search=${encodeURIComponent(searchQuery.trim())}`}
+                      onClick={() => {
+                        setIsSearchFocused(false);
+                        setSearchQuery("");
+                      }}
+                      className="block text-center py-2.5 text-xs font-bold text-[#14532D] hover:bg-emerald-50 bg-gray-50/50 border-t border-gray-100 transition-colors"
+                    >
+                      View all catalog results for &ldquo;{searchQuery}&rdquo; →
+                    </Link>
+                  </>
                 )}
               </div>
             )}
@@ -354,7 +417,7 @@ export const Header: React.FC = () => {
                   Cart
                 </span>
                 <span className="text-xs font-bold text-white leading-tight">
-                  ${subtotal.toFixed(2)}
+                  {formatBDT(subtotal)}
                 </span>
               </div>
             </button>
@@ -363,16 +426,29 @@ export const Header: React.FC = () => {
 
         {/* Mobile Search Bar */}
         <div className="md:hidden pb-3">
-          <div className="relative w-full">
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search groceries..."
-              className="w-full bg-[#f4f0e6] text-gray-900 placeholder-gray-500 text-sm rounded-full pl-10 pr-4 py-2 border border-[#dfd5c2] outline-none"
+              className="w-full bg-[#f4f0e6] text-gray-900 placeholder-gray-500 text-sm rounded-full pl-10 pr-9 py-2 border border-[#dfd5c2] outline-none focus:bg-white focus:border-[#14532D]"
             />
-            <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+            {isSearching ? (
+              <Loader2 className="w-4 h-4 text-emerald-700 animate-spin absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            ) : (
+              <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            )}
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-0.5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </form>
         </div>
       </div>
 

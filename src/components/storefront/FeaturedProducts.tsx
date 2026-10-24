@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles, Filter } from "lucide-react";
+import { Sparkles, Filter, ArrowRight } from "lucide-react";
 import { GroceryCategory, GroceryProduct } from "@/types";
-import { MOCK_PRODUCTS } from "@/data/mockGrocery";
+import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 
 interface FeaturedProductsProps {
@@ -13,26 +13,18 @@ interface FeaturedProductsProps {
 }
 
 export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
-  products,
-  categories,
+  products = [],
+  categories = [],
   initialCategoryId = "all",
 }) => {
   const [activeTab, setActiveTab] = useState(initialCategoryId);
 
-  const displayProducts = products && products.length > 0 ? products : MOCK_PRODUCTS;
+  const displayProducts = products;
 
-  // Build filter tabs from categories if provided, otherwise default tabs
+  // Build filter tabs from all live categories
   const tabs = [
     { id: "all", label: "All Fresh" },
-    ...(categories && categories.length > 0
-      ? categories.slice(0, 5).map((c) => ({ id: c.id, label: c.name, slug: c.slug }))
-      : [
-          { id: "cat-fruits", label: "Fresh Fruits", slug: "fresh-fruits" },
-          { id: "cat-vegetables", label: "Crisp Veggies", slug: "crisp-veggies" },
-          { id: "cat-dairy", label: "Dairy & Eggs", slug: "dairy-eggs" },
-          { id: "cat-bakery", label: "Bakery", slug: "artisan-bakery" },
-          { id: "cat-pantry", label: "Organic Pantry", slug: "organic-pantry" },
-        ]),
+    ...categories.map((c) => ({ id: c.id, label: c.name, slug: c.slug })),
   ];
 
   const filteredProducts =
@@ -89,18 +81,25 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
           })}
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {/* Products Grid - Mobile 2-column, tablet 3-column, desktop 4-column */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
           {filteredProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
 
         {filteredProducts.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-[#e5dbc7]">
-            <p className="text-gray-500 text-sm">
-              No products found in this category right now.
+          <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-[#e5dbc7] p-6 space-y-3">
+            <p className="text-gray-500 text-sm font-medium">
+              No featured produce found under this aisle right now.
             </p>
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#14532D] hover:underline"
+            >
+              <span>Explore all catalog items</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         )}
       </div>

@@ -8,6 +8,7 @@ import {
   Layers,
   Users,
   User,
+  ShoppingBag,
   X,
   ArrowRight,
 } from "lucide-react";
@@ -42,6 +43,7 @@ function getSidebarSections(role: string): SidebarSection[] {
       {
         title: "Store Operations",
         items: [
+          { icon: ShoppingBag, label: "Customer Orders", href: "/dashboard/seller/orders" },
           { icon: Package, label: "Products", href: "/dashboard/seller/products" },
           { icon: Layers, label: "Batch Inventory", href: "/dashboard/seller/inventory" },
         ],
@@ -56,6 +58,7 @@ function getSidebarSections(role: string): SidebarSection[] {
         title: "Operations",
         items: [
           { icon: LayoutDashboard, label: "Overview", href: "/dashboard/seller" },
+          { icon: ShoppingBag, label: "Customer Orders", href: "/dashboard/seller/orders" },
           { icon: Package, label: "Products", href: "/dashboard/seller/products" },
           { icon: Layers, label: "Batch Inventory", href: "/dashboard/seller/inventory" },
           { icon: User, label: "My Profile", href: "/dashboard/profile" },
@@ -71,6 +74,7 @@ function getSidebarSections(role: string): SidebarSection[] {
         title: "Staff Workstation",
         items: [
           { icon: LayoutDashboard, label: "Overview", href: "/dashboard/seller" },
+          { icon: ShoppingBag, label: "Customer Orders", href: "/dashboard/seller/orders" },
           { icon: Package, label: "Product Catalog", href: "/dashboard/seller/products" },
           { icon: Layers, label: "Inventory Levels", href: "/dashboard/seller/inventory" },
           { icon: User, label: "My Profile", href: "/dashboard/profile" },
@@ -85,6 +89,7 @@ function getSidebarSections(role: string): SidebarSection[] {
       title: "My Account",
       items: [
         { icon: LayoutDashboard, label: "Account Overview", href: "/dashboard/buyer" },
+        { icon: ShoppingBag, label: "My Orders", href: "/dashboard/buyer/orders" },
         { icon: User, label: "My Profile", href: "/dashboard/profile" },
       ],
     },

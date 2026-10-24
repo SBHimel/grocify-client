@@ -10,12 +10,13 @@ import {
   ArrowRight,
   AlertTriangle,
   User,
+  ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
 import { getProduct } from "@/lib/api/product";
 
 export const metadata: Metadata = {
-  title: "Operations Dashboard | Grocify Back-Office",
+  title: "Operations Dashboard",
   description: "Operations control panel for Grocify manager and staff.",
 };
 
@@ -30,22 +31,39 @@ async function getStats(token?: string) {
     const totalProducts = productsRes.totalCount || productsRes.data?.length || 0;
 
     let totalBatches = 0;
+    let totalOrders = 0;
+    let pendingOrders = 0;
 
     if (token) {
-      const batchesRes = await fetch(`${SERVER_URL}/api/v1/batches`, {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      }).catch(() => null);
+      const [batchesRes, ordersRes] = await Promise.all([
+        fetch(`${SERVER_URL}/api/v1/batches`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }).catch(() => null),
+        fetch(`${SERVER_URL}/api/v1/orders?limit=50`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }).catch(() => null),
+      ]);
 
       if (batchesRes?.ok) {
         const bJson = await batchesRes.json();
         totalBatches = Array.isArray(bJson.data) ? bJson.data.length : 0;
       }
+
+      if (ordersRes?.ok) {
+        const oJson = await ordersRes.json();
+        const ordersList = Array.isArray(oJson.data?.orders) ? oJson.data.orders : [];
+        totalOrders = oJson.data?.pagination?.total || ordersList.length;
+        pendingOrders = ordersList.filter(
+          (o: { status: string }) => o.status === "pending" || o.status === "confirmed"
+        ).length;
+      }
     }
 
-    return { totalProducts, totalBatches };
+    return { totalProducts, totalBatches, totalOrders, pendingOrders };
   } catch {
-    return { totalProducts: 0, totalBatches: 0 };
+    return { totalProducts: 0, totalBatches: 0, totalOrders: 0, pendingOrders: 0 };
   }
 }
 
@@ -79,6 +97,14 @@ export default async function SellerDashboardHomepage() {
   const stats = await getStats(token);
 
   const quickLinks = [
+    {
+      icon: ShoppingBag,
+      label: "Customer Orders",
+      description: "Review, fulfill pending orders, and manage COD delivery statuses.",
+      href: "/dashboard/seller/orders",
+      accent: "#b45309",
+      bg: "#fefce8",
+    },
     {
       icon: Package,
       label: "Product Catalog",
@@ -125,8 +151,24 @@ export default async function SellerDashboardHomepage() {
       </div>
 
       {/* KPI summary row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
+          {
+            label: "Pending Orders",
+            value: stats.pendingOrders,
+            sub: "requires fulfillment",
+            icon: ShoppingBag,
+            color: "#b45309",
+            bg: "#fefce8",
+          },
+          {
+            label: "Total Orders",
+            value: stats.totalOrders,
+            sub: "all-time placed",
+            icon: ShoppingBag,
+            color: "#15803d",
+            bg: "#f0fdf4",
+          },
           {
             label: "Catalog Products",
             value: stats.totalProducts,

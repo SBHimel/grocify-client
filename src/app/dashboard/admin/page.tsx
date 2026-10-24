@@ -16,7 +16,7 @@ import Link from "next/link";
 import { getProduct } from "@/lib/api/product";
 
 export const metadata: Metadata = {
-  title: "Owner Overview | Grocify Back-Office",
+  title: "Owner Overview",
   description: "Executive control panel for Grocify owner.",
 };
 

@@ -13,6 +13,7 @@ import {
   Send,
   CheckCircle,
 } from "lucide-react";
+import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa6";
 
 export const Footer: React.FC = () => {
   const pathname = usePathname();
@@ -118,8 +119,61 @@ export const Footer: React.FC = () => {
                 <span>Customer Care: +1 (800) 476-2439</span>
               </div>
               <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-amber-300 shrink-0" />
+                <a
+                  href="mailto:s.b.himel21@gmail.com"
+                  className="hover:text-amber-300 transition-colors"
+                  aria-label="Send an email to s.b.himel21@gmail.com"
+                >
+                  s.b.himel21@gmail.com
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-amber-300 shrink-0" />
                 <span>Central Distribution Hub, Suite 104</span>
+              </div>
+            </div>
+
+            {/* Social & Contact Profiles */}
+            <div className="pt-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300/60 mb-2">
+                Connect With Us
+              </p>
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://www.facebook.com/s.b.himel.669113"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Grocify on Facebook"
+                  className="w-8 h-8 rounded-xl bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 hover:text-white flex items-center justify-center transition-all border border-emerald-800/60 hover:scale-105"
+                >
+                  <FaFacebookF className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href="https://www.instagram.com/s.b.himel3/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Grocify on Instagram"
+                  className="w-8 h-8 rounded-xl bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 hover:text-white flex items-center justify-center transition-all border border-emerald-800/60 hover:scale-105"
+                >
+                  <FaInstagram className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/sbhimel/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Grocify on LinkedIn"
+                  className="w-8 h-8 rounded-xl bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 hover:text-white flex items-center justify-center transition-all border border-emerald-800/60 hover:scale-105"
+                >
+                  <FaLinkedinIn className="w-3.5 h-3.5" />
+                </a>
+                <a
+                  href="mailto:s.b.himel21@gmail.com"
+                  aria-label="Send an email to Grocify customer support"
+                  className="w-8 h-8 rounded-xl bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 hover:text-white flex items-center justify-center transition-all border border-emerald-800/60 hover:scale-105"
+                >
+                  <Mail className="w-4 h-4" />
+                </a>
               </div>
             </div>
           </div>

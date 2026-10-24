@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Package, ArrowRight, User } from "lucide-react";
+import { Package, ArrowRight, User, ClipboardList } from "lucide-react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "My Account | Grocify",
+  title: "My Account",
   description: "View your Grocify account and explore fresh grocery offerings.",
 };
 
@@ -19,6 +19,14 @@ export default async function BuyerHomePage() {
   }
 
   const accountLinks = [
+    {
+      icon: ClipboardList,
+      label: "My Orders",
+      description: "Track your deliveries and view order history.",
+      href: "/dashboard/buyer/orders",
+      accent: "#0f766e",
+      bg: "#f0fdfa",
+    },
     {
       icon: Package,
       label: "Browse Fresh Catalog",

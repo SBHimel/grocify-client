@@ -7,7 +7,7 @@ import { Users, ShieldAlert } from "lucide-react";
 import UserTable from "./UserTable";
 
 export const metadata: Metadata = {
-  title: "Staff & User Roles | Grocify Back-Office",
+  title: "Staff & User Roles",
   description: "Manage staff roles, access levels, and customer accounts.",
 };
 

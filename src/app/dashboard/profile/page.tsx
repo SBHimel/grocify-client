@@ -7,7 +7,7 @@ import { UserCheck } from "lucide-react";
 import ProfileForm from "@/components/dashboard/ProfileForm";
 
 export const metadata: Metadata = {
-  title: "My Profile & Account Security | Grocify Back-Office",
+  title: "Profile & Security",
   description: "View and update your personal information, profile photo, and password.",
 };
 

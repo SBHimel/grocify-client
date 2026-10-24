@@ -1,10 +1,21 @@
 import React from "react";
+import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import DashboardTopNav from "@/components/dashboard/DashboardTopNav";
 import { DashboardNavProvider } from "@/context/DashboardNavContext";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "Grocify operational management and customer portal.",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
+};
 
 export default async function DashboardLayout({
   children,

@@ -5,16 +5,30 @@ import { TrustBadges } from "@/components/storefront/TrustBadges";
 import { CategorySection } from "@/components/storefront/CategorySection";
 import { FeaturedProducts } from "@/components/storefront/FeaturedProducts";
 import { SeasonalBanner } from "@/components/storefront/SeasonalBanner";
+import { fetchProducts, fetchCategories } from "@/lib/api/catalog";
 import Image from "next/image";
 import { CheckCircle2, ShieldCheck, HeartHandshake, Leaf } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Grocify | Farm-Fresh Organic Groceries Delivered in 30 Minutes",
+  title: {
+    absolute: "Grocify — Farm-Fresh Organic Groceries Delivered in 30 Mins",
+  },
   description:
     "Shop certified organic fruits, morning-picked vegetables, farm eggs, artisan bakery loaves, and cold-pressed juices. Enjoy 30-minute delivery and Cash on Delivery (COD).",
+  openGraph: {
+    title: "Grocify — Farm-Fresh Organic Groceries Delivered in 30 Mins",
+    description:
+      "Shop certified organic fruits, morning-picked vegetables, farm eggs, artisan bakery loaves, and cold-pressed juices. Enjoy 30-minute delivery with Cash on Delivery (COD).",
+    url: "/",
+  },
 };
 
-export default function StorefrontHomePage() {
+export default async function StorefrontHomePage() {
+  const [products, categories] = await Promise.all([
+    fetchProducts({ isFeatured: true }),
+    fetchCategories(),
+  ]);
+
   return (
     <div className="min-h-screen bg-[#fdfbf7]">
       {/* Hero Section */}
@@ -24,10 +38,10 @@ export default function StorefrontHomePage() {
       <TrustBadges />
 
       {/* Category Section */}
-      <CategorySection />
+      <CategorySection categories={categories} />
 
       {/* Featured Products Catalog */}
-      <FeaturedProducts />
+      <FeaturedProducts products={products} categories={categories} />
 
       {/* Seasonal Promotion Harvest Banner */}
       <SeasonalBanner />
@@ -75,7 +89,7 @@ export default function StorefrontHomePage() {
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-[#e5dbc7]/80 shadow-xs">
+                <div className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-[#e5dbc7]/80 shadow-2xs">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-sm font-bold text-gray-900">
@@ -87,7 +101,7 @@ export default function StorefrontHomePage() {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-[#e5dbc7]/80 shadow-xs">
+                <div className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-[#e5dbc7]/80 shadow-2xs">
                   <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-sm font-bold text-gray-900">

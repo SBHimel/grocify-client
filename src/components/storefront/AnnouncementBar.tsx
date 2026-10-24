@@ -27,7 +27,7 @@ export const AnnouncementBar: React.FC = () => {
           <span className="hidden md:inline text-emerald-400/50">•</span>
           <div className="hidden md:flex items-center gap-1.5 shrink-0">
             <ShieldCheck className="w-3.5 h-3.5 text-amber-300" />
-            <span>Free Delivery on Orders Over $35</span>
+            <span>Free Delivery on Orders Over ৳35</span>
           </div>
         </div>
 

@@ -3,8 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Tag, Trash2, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Tag, Trash2, Loader2, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
+import EditProductModal from "@/components/dashboard/seller/EditProductModal";
+import { formatBDT } from "@/lib/currency";
 
 interface ProductItem {
   id?: string;
@@ -47,6 +49,7 @@ export default function ProductTable({ productsData, canDelete = true }: Product
   const totalPages = productsData?.totalPage || 1;
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
 
   const handleDelete = async (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to deactivate "${name}"?`)) {
@@ -134,9 +137,9 @@ export default function ProductTable({ productsData, canDelete = true }: Product
                   </td>
                   <td className="py-3.5 px-5">
                     <div className="flex items-center gap-3">
-                      {product.images?.[0] ? (
+                      {product.images?.[0]?.trim() ? (
                         <img
-                          src={product.images[0]}
+                          src={product.images[0].trim()}
                           alt={productName}
                           className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border"
                           style={{ borderColor: "#e5dbc7" }}
@@ -168,10 +171,10 @@ export default function ProductTable({ productsData, canDelete = true }: Product
                     </span>
                   </td>
                   <td className="py-3.5 px-5 font-bold text-gray-900">
-                    ${Number(price).toFixed(2)}
+                    {formatBDT(Number(price))}
                     {comparePrice && comparePrice > price && (
                       <span className="ml-1.5 text-[10px] text-gray-400 line-through font-normal">
-                        ${Number(comparePrice).toFixed(2)}
+                        {formatBDT(Number(comparePrice))}
                       </span>
                     )}
                   </td>
@@ -206,21 +209,31 @@ export default function ProductTable({ productsData, canDelete = true }: Product
                     </span>
                   </td>
                   {canDelete && (
-                    <td className="py-3.5 px-5 text-right">
+                    <td className="py-3.5 px-5 text-right whitespace-nowrap">
                       {isActive && productId ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(productId, productName)}
-                          disabled={isDeleting}
-                          title="Deactivate product"
-                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                        >
-                          {isDeleting ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setEditingProduct(product)}
+                            title="Edit product"
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-[#14532D] hover:bg-emerald-50 transition-colors cursor-pointer"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(productId, productName)}
+                            disabled={isDeleting}
+                            title="Deactivate product"
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 cursor-pointer"
+                          >
+                            {isDeleting ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       ) : (
                         <span className="text-[10px] text-gray-400 italic">—</span>
                       )}
@@ -304,6 +317,13 @@ export default function ProductTable({ productsData, canDelete = true }: Product
           </div>
         </div>
       )}
+
+      {/* Edit Product Modal */}
+      <EditProductModal
+        product={editingProduct}
+        isOpen={!!editingProduct}
+        onClose={() => setEditingProduct(null)}
+      />
     </div>
   );
 }

@@ -1,10 +1,12 @@
 import React from "react";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { fetchProductById } from "@/lib/api/catalog";
+import { fetchProductReviews } from "@/lib/api/reviews";
+import { ProductImageGallery } from "@/components/storefront/ProductImageGallery";
 import { ProductDetailCartActions } from "@/components/storefront/ProductDetailCartActions";
+import { ProductReviewsSection } from "@/components/storefront/ProductReviewsSection";
+import { formatBDT } from "@/lib/currency";
 import {
   Leaf,
   ShieldCheck,
@@ -12,7 +14,6 @@ import {
   Banknote,
   Star,
   ArrowLeft,
-  Sparkles,
 } from "lucide-react";
 
 interface ProductPageProps {
@@ -27,13 +28,39 @@ export async function generateMetadata({
 
   if (!product) {
     return {
-      title: "Product Not Found | Grocify",
+      title: "Produce Not Found",
+      description: "The requested grocery product could not be found in the catalog.",
+      robots: { index: false, follow: false },
     };
   }
 
+  const primaryImage = product.images?.[0]?.trim() || "/assets/grocify_logo.png";
+  const title = product.name;
+  const description =
+    product.description?.trim().slice(0, 160) ||
+    `Order fresh ${product.name} delivered to your door in 30 minutes with Cash on Delivery from Grocify.`;
+
   return {
-    title: `${product.name} | Grocify Farm-Fresh`,
-    description: product.description.slice(0, 160),
+    title,
+    description,
+    openGraph: {
+      title: `${product.name} | Grocify`,
+      description,
+      url: `/products/${product.slug || product.id}`,
+      images: [
+        {
+          url: primaryImage,
+          alt: product.name,
+        },
+      ],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${product.name} | Grocify`,
+      description,
+      images: [primaryImage],
+    },
   };
 }
 
@@ -66,6 +93,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     );
   }
 
+  // Fetch verified reviews for this product
+  const reviews = await fetchProductReviews(product.id);
+
   const discountPercent =
     product.originalPrice && product.originalPrice > product.retailPrice
       ? Math.round(
@@ -79,7 +109,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       : `${product.unit.multiplier} ${product.unit.baseUnit} / ${product.unit.sellUnit}`;
 
   return (
-    <div className="min-h-screen bg-[#fdfbf7] py-10 sm:py-14">
+    <div className="min-h-screen bg-[#fdfbf7] py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Back Link */}
         <div className="mb-6">
@@ -92,43 +122,18 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           </Link>
         </div>
 
-        {/* Product Card Container */}
+        {/* Product Details Main Card */}
         <div className="bg-white rounded-3xl border border-[#e5dbc7] shadow-sm overflow-hidden p-6 sm:p-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 sm:gap-14 items-start">
-            {/* Left: Product Image */}
-            <div className="lg:col-span-6 space-y-4">
-              <div className="relative aspect-square w-full rounded-3xl overflow-hidden bg-[#f4f1e8] border border-[#f0ebde]">
-                <Image
-                  src={product.images[0] || ""}
-                  alt={product.name}
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 600px"
-                  className="object-cover hover:scale-105 transition-transform duration-500"
-                />
-
-                {/* Badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
-                  {product.isOrganic && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider bg-emerald-700 text-white px-3 py-1 rounded-full shadow-sm">
-                      <Leaf className="w-3.5 h-3.5" />
-                      100% Organic
-                    </span>
-                  )}
-                  {product.isSeasonal && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider bg-amber-400 text-gray-950 px-3 py-1 rounded-full shadow-sm">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-900" />
-                      Fresh Harvest
-                    </span>
-                  )}
-                </div>
-
-                {discountPercent && (
-                  <span className="absolute top-4 right-4 text-xs font-black bg-red-600 text-white px-3 py-1 rounded-full shadow-sm">
-                    Save {discountPercent}%
-                  </span>
-                )}
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-14 items-start">
+            {/* Left: Multi-Image Product Gallery */}
+            <div className="lg:col-span-6">
+              <ProductImageGallery
+                images={product.images}
+                name={product.name}
+                isOrganic={product.isOrganic}
+                isSeasonal={product.isSeasonal}
+                discountPercent={discountPercent}
+              />
             </div>
 
             {/* Right: Product Details & Purchase Actions */}
@@ -150,13 +155,13 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 </h1>
 
                 {/* Rating & Stock */}
-                <div className="flex flex-wrap items-center gap-4 mt-3 text-xs">
-                  {product.rating && (
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-3 text-xs">
+                  {product.rating !== undefined && product.rating > 0 && (
                     <div className="flex items-center gap-1 font-bold text-gray-800">
                       <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                       <span>{product.rating}</span>
                       <span className="text-gray-400 font-normal">
-                        ({product.reviewCount} verified buyer reviews)
+                        ({product.reviewCount ?? reviews.length} verified buyer reviews)
                       </span>
                     </div>
                   )}
@@ -180,23 +185,23 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               {/* Price & Unit Box */}
               <div className="p-4 rounded-2xl bg-[#fdfbf7] border border-[#e5dbc7]/80 flex items-baseline justify-between">
                 <div>
-                  <span className="text-xs text-gray-400 block font-semibold uppercase">
+                  <span className="text-[11px] text-gray-400 block font-semibold uppercase tracking-wider">
                     Retail Price
                   </span>
                   <div className="flex items-baseline gap-2 mt-0.5">
                     <span className="text-3xl font-black text-[#14532D]">
-                      ${product.retailPrice.toFixed(2)}
+                      {formatBDT(product.retailPrice)}
                     </span>
                     {product.originalPrice && product.originalPrice > product.retailPrice && (
                       <span className="text-sm text-gray-400 line-through">
-                        ${product.originalPrice.toFixed(2)}
+                        {formatBDT(product.originalPrice)}
                       </span>
                     )}
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-xs text-gray-400 block font-semibold uppercase">
+                  <span className="text-[11px] text-gray-400 block font-semibold uppercase tracking-wider">
                     Package Unit
                   </span>
                   <span className="text-sm font-bold text-gray-800">
@@ -206,11 +211,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               </div>
 
               {/* Description */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
                   Product Description & Freshness Notes
                 </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                   {product.description}
                 </p>
               </div>
@@ -236,6 +241,14 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             </div>
           </div>
         </div>
+
+        {/* Customer Reviews & Ratings Section */}
+        <ProductReviewsSection
+          productId={product.id}
+          initialReviews={reviews}
+          productRating={product.rating}
+          productReviewCount={product.reviewCount}
+        />
       </div>
     </div>
   );

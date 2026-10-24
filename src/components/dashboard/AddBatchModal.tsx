@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlusCircle, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { ProductSimple } from "@/lib/api/inventory";
+import { validateProductUnitConversion } from "@/lib/unit-validation";
 
 interface AddBatchModalProps {
   products: ProductSimple[];
@@ -53,6 +54,21 @@ export function AddBatchModal({ products }: AddBatchModalProps) {
     if (isNaN(numCost) || numCost < 0) {
       setErrorMsg("Unit cost cannot be negative.");
       return;
+    }
+
+    const selectedProduct = products.find((p) => p.id === productId);
+    if (selectedProduct?.unit) {
+      const check = validateProductUnitConversion(selectedProduct.name, {
+        baseUnit: selectedProduct.unit.baseUnit as any,
+        sellUnit: unit as any,
+        multiplier: selectedProduct.unit.multiplier,
+      });
+      if (!check.isValid) {
+        setErrorMsg(
+          `Batch unit '${unit}' is incompatible with product stock unit '${selectedProduct.unit.baseUnit}'.`
+        );
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -230,7 +246,7 @@ export function AddBatchModal({ products }: AddBatchModalProps) {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Cost/Unit ($) <span className="text-red-500">*</span>
+                    Cost/Unit (৳) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
