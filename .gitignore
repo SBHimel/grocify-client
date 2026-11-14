@@ -38,3 +38,7 @@ yarn-error.log*
 
 # TypeScript
 *.tsbuildinfo
+
+.vercel
+AGENTS.md
+CLAUDE.md
